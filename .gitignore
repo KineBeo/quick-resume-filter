@@ -1,3 +1,8 @@
 .env
 .DS_Store
 app/__pycache__
+.env/example
+/junior fullstack developer
+/app
+HOW_TO_SHARE_DASHBOARD.md
+README.md
