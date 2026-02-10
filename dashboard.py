@@ -28,22 +28,27 @@ def display_pdf(file_path):
     """Display PDF file in Streamlit"""
     try:
         with open(file_path, "rb") as f:
-            base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+            pdf_bytes = f.read()
         
-        # Embed PDF in iframe with responsive height
-        pdf_display = f'''
-            <iframe src="data:application/pdf;base64,{base64_pdf}" 
-                    width="100%" height="800" type="application/pdf"
-                    style="border: 1px solid #ddd; border-radius: 5px;">
-            </iframe>
-        '''
+        # Download button for all browsers
+        st.download_button(
+            label="📥 Download CV",
+            data=pdf_bytes,
+            file_name=os.path.basename(file_path),
+            mime="application/pdf"
+        )
+        
+        # Try iframe for Firefox/Safari
+        base64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
+        pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="800" style="border:1px solid #ddd"></iframe>'
         st.markdown(pdf_display, unsafe_allow_html=True)
+        st.caption("💡 If PDF doesn't display, use Download button above")
         return True
     except FileNotFoundError:
         st.warning(f"⚠️ CV file not found: {file_path}")
         return False
     except Exception as e:
-        st.error(f"❌ Error loading PDF: {str(e)}")
+        st.error(f"❌ Error: {str(e)}")
         return False
 
 def get_cv_path(cv_filename, cv_folder):
