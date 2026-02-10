@@ -6,6 +6,7 @@ from plotly.subplots import make_subplots
 import numpy as np
 import os
 import base64
+import streamlit.components.v1 as components
 
 # Set page configuration
 st.set_page_config(
@@ -30,7 +31,7 @@ def display_pdf(file_path):
         with open(file_path, "rb") as f:
             pdf_bytes = f.read()
         
-        # Download button for all browsers
+        # Download button
         st.download_button(
             label="📥 Download CV",
             data=pdf_bytes,
@@ -38,11 +39,13 @@ def display_pdf(file_path):
             mime="application/pdf"
         )
         
-        # Try iframe for Firefox/Safari
+        # PDF.js viewer - works on all browsers
         base64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
-        pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="800" style="border:1px solid #ddd"></iframe>'
-        st.markdown(pdf_display, unsafe_allow_html=True)
-        st.caption("💡 If PDF doesn't display, use Download button above")
+        pdf_viewer = f"""
+        <iframe src="https://mozilla.github.io/pdf.js/web/viewer.html?file=data:application/pdf;base64,{base64_pdf}" 
+                width="100%" height="800" style="border:none;"></iframe>
+        """
+        components.html(pdf_viewer, height=800, scrolling=True)
         return True
     except FileNotFoundError:
         st.warning(f"⚠️ CV file not found: {file_path}")
