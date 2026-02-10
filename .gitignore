@@ -1,18 +1,13 @@
-# Environment variables
+# Environment
 .env
 
-# Python cache
-app/__pycache__
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
+app/__pycache__
 
-# OS files
+# OS
 .DS_Store
 .vscode/
 .idea/
-
-# Don't ignore these for Streamlit Cloud deployment
-# junior fullstack developer/
-# data/
-# results.csv

@@ -91,27 +91,17 @@ The AI evaluator dynamically generates evaluation criteria based on the job role
 
 ## 📊 Dashboard
 
-The application now includes a Streamlit dashboard to visualize the results:
-
-### Local Development
-
-1. Run the dashboard:
+Run the dashboard:
 ```bash
 streamlit run dashboard.py
 ```
 
-2. The dashboard provides:
-- Interactive candidate rankings with split-screen CV preview
-- Score distribution visualization
-- Pass rate by level
-- Detailed candidate information
-- Original CV preview (PDF viewer)
-- Filtering options by level, pass status, and score range
-- Top candidates overview
+Features:
+- Split-screen view (candidate info + CV preview)
+- Interactive filters and visualizations
+- PDF viewer for original CVs
 
-### Deploy to Streamlit Cloud
-
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
+Deploy: See [DEPLOYMENT.md](DEPLOYMENT.md)
 
 ## 📝 Notes
 
