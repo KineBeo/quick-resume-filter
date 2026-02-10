@@ -1,8 +1,18 @@
+# Environment variables
 .env
-.DS_Store
+
+# Python cache
 app/__pycache__
-.env/example
-/junior fullstack developer
-/app
-HOW_TO_SHARE_DASHBOARD.md
-README.md
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS files
+.DS_Store
+.vscode/
+.idea/
+
+# Don't ignore these for Streamlit Cloud deployment
+# junior fullstack developer/
+# data/
+# results.csv

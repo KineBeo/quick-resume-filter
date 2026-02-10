@@ -4,6 +4,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
+import os
+import base64
 
 # Set page configuration
 st.set_page_config(
@@ -12,14 +14,54 @@ st.set_page_config(
     layout="wide"
 )
 
+# Configuration for CV folder
+# Default path works for both local and Streamlit Cloud deployment
+DEFAULT_CV_FOLDER = "./junior fullstack developer"
+CV_FOLDER = st.sidebar.text_input("CV Folder Path", value=DEFAULT_CV_FOLDER, help="Path to folder containing original CV PDFs")
+
 # Title
 st.title("🔍 AI-Powered CV Screening Dashboard")
 st.markdown("---")
 
+# Helper function to display PDF
+def display_pdf(file_path):
+    """Display PDF file in Streamlit"""
+    try:
+        with open(file_path, "rb") as f:
+            base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+        
+        # Embed PDF in iframe with responsive height
+        pdf_display = f'''
+            <iframe src="data:application/pdf;base64,{base64_pdf}" 
+                    width="100%" height="800" type="application/pdf"
+                    style="border: 1px solid #ddd; border-radius: 5px;">
+            </iframe>
+        '''
+        st.markdown(pdf_display, unsafe_allow_html=True)
+        return True
+    except FileNotFoundError:
+        st.warning(f"⚠️ CV file not found: {file_path}")
+        return False
+    except Exception as e:
+        st.error(f"❌ Error loading PDF: {str(e)}")
+        return False
+
+def get_cv_path(cv_filename, cv_folder):
+    """Get full path to CV file"""
+    return os.path.join(cv_folder, cv_filename)
+
+def cv_exists(cv_filename, cv_folder):
+    """Check if CV file exists"""
+    return os.path.isfile(get_cv_path(cv_filename, cv_folder))
+
 # Load the results CSV
 @st.cache_data
 def load_data():
-    df = pd.read_csv('results.csv')
+    # Support both local and deployed paths
+    csv_path = 'results.csv'
+    if not os.path.exists(csv_path):
+        csv_path = './results.csv'
+    df = pd.read_csv(csv_path)
 
     # --- FIX 1: Normalize score column ---
     # Convert score to numeric safely
@@ -149,6 +191,11 @@ try:
     
     for idx, row in top_candidates.iterrows():
         with st.expander(f"📄 {row['output']} - Score: {row['score']}/100"):
+            # Add CV preview button
+            cv_available = cv_exists(row['output'], CV_FOLDER)
+            cv_status = "✅ CV Available" if cv_available else "⚠️ CV Not Found"
+            st.caption(cv_status)
+            
             col1, col2 = st.columns(2)
             
             with col1:
@@ -164,10 +211,15 @@ try:
                 
                 st.write("**Justification:**")
                 st.write(row['justification'])
+            
+            # Quick CV preview toggle
+            if cv_available:
+                if st.checkbox(f"👁️ Preview CV", key=f"preview_{idx}"):
+                    display_pdf(get_cv_path(row['output'], CV_FOLDER))
     
-    # Detailed view for individual candidate
+    # Detailed view for individual candidate - SPLIT SCREEN
     st.markdown("---")
-    st.subheader("Candidate Details")
+    st.subheader("Candidate Details & CV Preview")
     
     selected_candidate = st.selectbox("Select a candidate to view details:", 
                                      options=filtered_df_sorted['output'].tolist())
@@ -177,35 +229,55 @@ try:
         
         st.markdown(f"### {selected_candidate}")
         
-        col1, col2 = st.columns(2)
+        # Split screen: Left = Info, Right = CV Preview
+        left_col, right_col = st.columns([1, 1])
         
-        with col1:
-            st.metric(label="Score", value=f"{candidate_data['score']}/100", 
-                     delta="Pass" if candidate_data['pass'] else "Don't Pass")
-            st.write(f"**Level:** {candidate_data['level']}")
-        
-        with col2:
-            if candidate_data['score'] >= 80:
-                st.success("Strong Candidate")
-            elif candidate_data['score'] >= 70:
-                st.warning("Moderate Candidate")
+        with left_col:
+            st.markdown("#### 📋 Candidate Information")
+            
+            # Score metrics
+            metric_col1, metric_col2 = st.columns(2)
+            with metric_col1:
+                st.metric(label="Score", value=f"{candidate_data['score']}/100", 
+                         delta="Pass" if candidate_data['pass'] else "Don't Pass")
+            with metric_col2:
+                st.write(f"**Level:** {candidate_data['level']}")
+                if candidate_data['score'] >= 80:
+                    st.success("🌟 Strong Candidate")
+                elif candidate_data['score'] >= 70:
+                    st.warning("⚡ Moderate Candidate")
+                else:
+                    st.error("⚠️ Weak Candidate")
+            
+            st.markdown("---")
+            
+            # Scrollable info section
+            st.write("**Educational Qualification:**")
+            st.info(candidate_data['educationalQualification'])
+            
+            st.write("**Job History:**")
+            st.info(candidate_data['jobHistory'])
+            
+            st.write("**Skills:**")
+            st.info(candidate_data['skillSet'])
+            
+            st.write("**Justification:**")
+            if candidate_data['pass']:
+                st.success(candidate_data['justification'])
             else:
-                st.error("Weak Candidate")
+                st.error(candidate_data['justification'])
         
-        st.write("**Educational Qualification:**")
-        st.info(candidate_data['educationalQualification'])
-        
-        st.write("**Job History:**")
-        st.info(candidate_data['jobHistory'])
-        
-        st.write("**Skills:**")
-        st.info(candidate_data['skillSet'])
-        
-        st.write("**Justification:**")
-        if candidate_data['pass']:
-            st.success(candidate_data['justification'])
-        else:
-            st.error(candidate_data['justification'])
+        with right_col:
+            st.markdown("#### 📄 Original CV Preview")
+            
+            cv_path = get_cv_path(selected_candidate, CV_FOLDER)
+            
+            if cv_exists(selected_candidate, CV_FOLDER):
+                st.success(f"✅ CV found")
+                display_pdf(cv_path)
+            else:
+                st.error(f"❌ CV file not found at: `{cv_path}`")
+                st.info("💡 Please check the CV folder path in the sidebar or ensure the CV file exists.")
 
 except FileNotFoundError:
     st.error("❌ Results.csv file not found. Please run the CV screening application first.")
